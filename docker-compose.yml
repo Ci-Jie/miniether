@@ -1,0 +1,82 @@
+version: '3'
+services:
+  netstat:
+    build:
+      context: ./netstat
+      args:
+        WS_SECRET: 77777
+    ports:
+      - "3000:3000"
+    networks:
+      eth_net:
+        ipv4_address: 172.16.0.10
+  node-1:
+    build:
+      context: ./node
+      args:
+        WS_SECRET: 77777
+        PEER_IP: 172.16.0.11
+        NODE_IP: 172.16.0.11
+        INSTANCE_NAME: node-1
+        NETSTAT_IP: 172.16.0.10
+    depends_on:
+      - netstat
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 500M
+        reservations:
+          cpus: '0.5'
+          memory: 500M
+    ports:
+      - "30303:30303"
+      - "8545:8545"
+    networks:
+      eth_net:
+        ipv4_address: 172.16.0.11
+  node-2:
+    build:
+      context: ./node
+      args:
+        WS_SECRET: 77777
+        PEER_IP: 172.16.0.11
+        NODE_IP: 172.16.0.12
+        INSTANCE_NAME: node-2
+        NETSTAT_IP: 172.16.0.10
+    depends_on:
+      - netstat
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 500M
+        reservations:
+          cpus: '0.5'
+          memory: 500M
+    ports:
+      - "30304:30303"
+      - "8546:8545"
+    networks:
+      eth_net:
+        ipv4_address: 172.16.0.12
+  monitor:
+    build:
+      context: ./monitor
+      args:
+        PEER_IP: 172.16.0.11
+        NODES_IP: '172.16.0.11,172.16.0.12'
+    depends_on:
+      - netstat
+      - node-1
+    networks:
+      eth_net:
+        ipv4_address: 172.16.0.13
+networks:
+  eth_net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      -
+        subnet: 172.16.0.0/24
